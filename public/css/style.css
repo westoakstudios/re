@@ -889,3 +889,99 @@ button[disabled] { opacity: .4; cursor: not-allowed; }
   background: transparent;
   color: var(--muted);
 }
+/* ---------- File Manager ---------- */
+.filemgr-list {
+  flex: 1; 
+  min-height: 0; 
+  overflow-y: auto; 
+  background: var(--bg);
+}
+
+.fm-head {
+  display: grid;
+  grid-template-columns: 1fr 120px 80px;
+  padding: 8px 16px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.fm-row {
+  display: grid;
+  grid-template-columns: 1fr 120px 80px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+  font-size: 13px;
+  cursor: default;
+}
+
+.fm-row:hover { background: var(--panel); }
+.fm-row.dir { cursor: pointer; }
+
+.fm-row .nm {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* THIS IS THE FIX FOR THE HUGE BLACK BLOB */
+.fm-row .nm svg {
+  width: 16px;
+  height: 16px;
+  stroke: var(--accent);
+  fill: none;
+  stroke-width: 2;
+  flex-shrink: 0;
+}
+
+.fm-row .sz {
+  color: var(--muted);
+  font-family: var(--mono);
+  text-align: right;
+  font-size: 11px;
+}
+
+.fm-row .ac {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.fm-empty, .fm-err {
+  padding: 32px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+.fm-err { color: var(--red); }
+
+/* File Manager Drives Toolbar */
+.filemgr-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px; flex-shrink: 0;
+  background: var(--bg-2); border-bottom: 1px solid var(--line);
+}
+.filemgr-bar .lbl {
+  font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted-2); font-weight: 600; min-width: 44px;
+}
+.filemgr-bar .fm-path {
+  flex: 1; min-width: 0; margin: 0;
+  padding: 7px 12px; font-size: 12px;
+  font-family: var(--mono);
+  background: var(--bg); border: 1px solid var(--line);
+  border-radius: var(--r-md); color: var(--text);
+}
+.drives { display: flex; gap: 4px; flex-wrap: wrap; }
+.drives button { margin: 0; padding: 4px 10px; font-size: 11px; background: var(--panel-3); border: 1px solid var(--line-2); border-radius: var(--r-sm); color: var(--text); cursor: pointer; }
+.drives button.active { background: var(--text); color: var(--bg); border-color: var(--text); }
