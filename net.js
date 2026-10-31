@@ -24,9 +24,6 @@ const pingStore      = new Map();
 const framesRecv = new Map();
 const cursorRecv = new Map();
 
-// Track frame counts for logging
-let frameCount = 0;
-
 function startTimers() {
   pingInterval = setInterval(() => {
     if (!udpSock) return;
@@ -92,7 +89,10 @@ function assembleFrame(buf) {
   }
   if (buf.crc) {
     const got = crc32(out);
-    if (got !== buf.crc) return null;
+    if (got !== buf.crc) {
+      console.log(`[udp] CRC mismatch: got ${got} expected ${buf.crc}`);
+      return null;
+    }
   }
   return out;
 }
@@ -106,11 +106,10 @@ function storeFrame(buf) {
 
   const k = `${buf.kind}:${buf.cid}`;
   framesRecv.set(k, (framesRecv.get(k) || 0) + 1);
-
-  // Log every 50 frames so the console doesn't spam
-  frameCount++;
-  if (frameCount % 50 === 0) {
-    console.log(`[udp] received 50 frames for ${k} (${bytes.length} bytes)`);
+  
+  const count = framesRecv.get(k);
+  if (count % 20 === 0) {
+    console.log(`[udp] stored frame for ${k} (${bytes.length} bytes)`);
   }
 }
 
