@@ -4,7 +4,15 @@ const params = new URLSearchParams(location.search);
 const clientId = Number(params.get('id'));
 const hostName = params.get('host') || `client ${clientId}`;
 const hostIp   = params.get('ip') || '';
+const token    = params.get('token') || '';
+
 $('target').textContent = `${hostName} @ ${hostIp}`;
+
+function apiFetch(url, opts = {}) {
+  opts.headers = opts.headers || {};
+  if (token) opts.headers['Authorization'] = `Bearer ${token}`;
+  return fetch(url, opts);
+}
 
 let filePath = "C:\\";
 
@@ -39,7 +47,7 @@ function parentPath(p) {
 
 async function runOp(action, path, extra = {}) {
   const payload = JSON.stringify({ action, path, ...extra });
-  const r = await fetch(`/api/clients/${clientId}/exec`, {
+  const r = await apiFetch(`/api/clients/${clientId}/exec`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ shell: 'file', line: payload }),
@@ -55,7 +63,7 @@ async function runOp(action, path, extra = {}) {
   for (let i = 0; i < 240; i++) {
     await new Promise(res => setTimeout(res, 500));
     try {
-      const rows = await (await fetch(`/api/clients/${clientId}/commands`)).json();
+      const rows = await (await apiFetch(`/api/clients/${clientId}/commands`)).json();
       const c = rows.find(x => x.id === cmdId);
       if (c && c.status === 'done') return c.output || '';
     } catch {}

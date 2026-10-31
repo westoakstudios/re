@@ -4,7 +4,15 @@ const params = new URLSearchParams(location.search);
 const clientId = Number(params.get('id'));
 const hostName = params.get('host') || `client ${clientId}`;
 const hostIp   = params.get('ip') || '';
+const token    = params.get('token') || '';
+
 $('target').textContent = `${hostName} @ ${hostIp}`;
+
+function apiFetch(url, opts = {}) {
+  opts.headers = opts.headers || {};
+  if (token) opts.headers['Authorization'] = `Bearer ${token}`;
+  return fetch(url, opts);
+}
 
 let polling = false;
 let state = {
@@ -42,7 +50,7 @@ async function killProcess(pid, name) {
   
   $('status').textContent = `killing ${pid}…`;
   try {
-    const r = await fetch(`/api/clients/${clientId}/exec`, {
+    const r = await apiFetch(`/api/clients/${clientId}/exec`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ shell: 'cmd', line: `taskkill /F /PID ${pid}` }),
@@ -61,7 +69,7 @@ async function poll() {
   polling = true;
   $('status').textContent = 'sampling…';
   try {
-    const r = await fetch(`/api/clients/${clientId}/sysinfo`, { credentials: 'same-origin' });
+    const r = await apiFetch(`/api/clients/${clientId}/sysinfo`);
     const d = await r.json().catch(() => ({}));
     if (!r.ok || !d.ok) {
       $('status').textContent = `error: ${d.error || r.status}`;

@@ -5,8 +5,15 @@ const params = new URLSearchParams(location.search);
 const clientId = Number(params.get('id'));
 const hostName = params.get('host') || `client ${clientId}`;
 const hostIp   = params.get('ip') || '';
+const token    = params.get('token') || '';
 
 $('target').textContent = `${hostName} @ ${hostIp}`;
+
+function apiFetch(url, opts = {}) {
+  opts.headers = opts.headers || {};
+  if (token) opts.headers['Authorization'] = `Bearer ${token}`;
+  return fetch(url, opts);
+}
 
 let cfg = { monitor: 0, width: 1280, height: 720, quality: 50, fps: 10, keyboard: false, mouse: false };
 let monitors = [];
@@ -104,14 +111,14 @@ async function doAutoReconnect() {
   running = false;
   stopCursorPolling();
   cursorDot.style.display = 'none';
-  try { await fetch(`/api/clients/${clientId}/rdp/stop`, { method: 'POST' }); } catch {}
+  try { await apiFetch(`/api/clients/${clientId}/rdp/stop`, { method: 'POST' }); } catch {}
   await new Promise(r => setTimeout(r, 1500));
   try { await start(); } catch {}
 }
 
 async function loadMonitors() {
   try {
-    const r = await fetch(`/api/clients/${clientId}/monitors`);
+    const r = await apiFetch(`/api/clients/${clientId}/monitors`);
     if (!r.ok) return;
     monitors = await r.json();
     const sel = $('monitor');
@@ -168,7 +175,7 @@ async function start() {
   if (img.parentNode) img.parentNode.removeChild(img);
   if (cursorDot.parentNode) cursorDot.parentNode.removeChild(cursorDot);
 
-  const r = await fetch(`/api/clients/${clientId}/rdp/start`, {
+  const r = await apiFetch(`/api/clients/${clientId}/rdp/start`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(cfg),
@@ -191,7 +198,7 @@ async function stop() {
   running = false;
   stopCursorPolling();
   cursorDot.style.display = 'none';
-  try { await fetch(`/api/clients/${clientId}/rdp/stop`, { method: 'POST' }); } catch {}
+  try { await apiFetch(`/api/clients/${clientId}/rdp/stop`, { method: 'POST' }); } catch {}
 }
 
 async function restart() {
@@ -199,10 +206,10 @@ async function restart() {
   restarting = true;
   const btn = $('reset'); const orig = btn.textContent;
   btn.textContent = 'resetting…'; btn.disabled = true;
-  try { await fetch(`/api/clients/${clientId}/rdp/stop`, { method: 'POST' }); } catch {}
+  try { await apiFetch(`/api/clients/${clientId}/rdp/stop`, { method: 'POST' }); } catch {}
   running = false; stopCursorPolling(); cursorDot.style.display = 'none';
   await new Promise(r => setTimeout(r, 3500));
-  const r = await fetch(`/api/clients/${clientId}/rdp/start`, {
+  const r = await apiFetch(`/api/clients/${clientId}/rdp/start`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(cfg),
@@ -256,8 +263,7 @@ function stopCursorPolling() {
 async function pollCursor() {
   if (!running) return;
   try {
-    const r = await fetch(`/api/clients/${clientId}/cursor?t=${Date.now()}`, {
-      credentials: 'same-origin',
+    const r = await apiFetch(`/api/clients/${clientId}/cursor?t=${Date.now()}`, {
       cache: 'no-store',
       headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
     });
@@ -297,7 +303,7 @@ $('monitor').addEventListener('change', async (e) => {
 }
 async function pushCfg(extra) {
   try {
-    await fetch(`/api/clients/${clientId}/rdp/update`, {
+    await apiFetch(`/api/clients/${clientId}/rdp/update`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ keyboard: cfg.keyboard, mouse: cfg.mouse, ...(extra || {}) }),
     });
@@ -316,7 +322,7 @@ $('mouse').addEventListener('click', () => {
 $('reset').addEventListener('click', restart);
 
 function sendInput(payload) {
-  fetch(`/api/clients/${clientId}/input`, {
+  apiFetch(`/api/clients/${clientId}/input`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload), keepalive: true,
   }).catch(() => {});

