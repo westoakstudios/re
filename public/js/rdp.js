@@ -1,11 +1,11 @@
-// language: JavaScript, file: public/js/rdp.js
+// language: JavaScript, file: public/js/rdp.js (Remote Server)
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 
 const clientId = Number(params.get('id'));
 const hostName = params.get('host') || `client ${clientId}`;
 const hostIp   = params.get('ip') || '';
-const token    = params.get('token') || '';
+const token    = params.get('token') || ''; // <--- GET TOKEN
 
 $('target').textContent = `${hostName} @ ${hostIp}`;
 
