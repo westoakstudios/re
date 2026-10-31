@@ -1,4 +1,4 @@
-// language: JavaScript, file: server.js
+// language: JavaScript, file: server.js (Remote Server)
 import express from 'express';
 import cors from 'cors';
 import { startUdp, getFrame, getWebcamFrame, getCursor, getMonitors, sendInput, sendCfg } from './net.js';
@@ -54,6 +54,9 @@ app.use('/api', async (req, res) => {
   }
 
   try {
+    // Log the proxy request so you can see the dashboard talking to the remote server
+    console.log(`[proxy] ${req.method} ${req.url} -> ${mainIp}`);
+
     const url = `http://${mainIp}` + req.originalUrl;
     const fetchOpts = {
       method: req.method,

@@ -1,4 +1,4 @@
-// language: JavaScript, file: net.js
+// language: JavaScript, file: net.js (Remote Server)
 import dgram from 'node:dgram';
 
 const MAX_UDP_MSG   = 65500;
@@ -23,6 +23,9 @@ const pingStore      = new Map();
 
 const framesRecv = new Map();
 const cursorRecv = new Map();
+
+// Track frame counts for logging
+let frameCount = 0;
 
 function startTimers() {
   pingInterval = setInterval(() => {
@@ -103,6 +106,12 @@ function storeFrame(buf) {
 
   const k = `${buf.kind}:${buf.cid}`;
   framesRecv.set(k, (framesRecv.get(k) || 0) + 1);
+
+  // Log every 50 frames so the console doesn't spam
+  frameCount++;
+  if (frameCount % 50 === 0) {
+    console.log(`[udp] received 50 frames for ${k} (${bytes.length} bytes)`);
+  }
 }
 
 function handleTextMessage(text, rinfo) {
@@ -117,6 +126,7 @@ function handleTextMessage(text, rinfo) {
     const key = parts[2];
     if (!cid || !key) return null;
     clientAddr.set(cid, { address: rinfo.address, port: rinfo.port });
+    console.log(`[udp] client ${cid} registered from ${rinfo.address}:${rinfo.port}`);
     return 'WHREG';
   }
 
@@ -169,6 +179,7 @@ function handleTextMessage(text, rinfo) {
     try {
       const list = JSON.parse(rest.slice(c + 1));
       monitorStore.set(cid, Array.isArray(list) ? list : []);
+      console.log(`[udp] client ${cid} sent monitor list`);
     } catch {}
     return 'WHMON';
   }
